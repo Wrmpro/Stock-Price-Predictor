@@ -135,5 +135,3 @@ if ticker:
 
     except Exception as e:
         st.error(f"⚠️ Error fetching data: {e}")
-
-⚠️ Error fetching data: The truth value of a Series is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all().
