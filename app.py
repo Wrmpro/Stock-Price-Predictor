@@ -76,6 +76,21 @@ else:
     ticker = "AAPL"  # default
 
 
+# Helpers to normalize yfinance columns
+def _get_column_as_series(df: pd.DataFrame, col_name: str) -> pd.Series:
+    """
+    Return the requested column as a 1-D Series, even if df[col_name] is a DataFrame
+    (e.g., from multi-index columns). If multiple subcolumns exist, take the first.
+    """
+    col = df[col_name]
+    if isinstance(col, pd.DataFrame):
+        # Reduce to first sub-column if multi-dimensional
+        col = col.iloc[:, 0]
+    # Ensure numeric if possible
+    col = pd.to_numeric(col, errors="coerce")
+    return col
+
+
 # Function to fetch stock data
 @st.cache_data
 def load_data(symbol, start, end):
@@ -86,52 +101,72 @@ def load_data(symbol, start, end):
 # --- Main Section ---
 if ticker:
     try:
-        # Load data
-        data = load_data(ticker, start_date, end_date)
-
-        if data.empty:
-            st.error("⚠️ No data found! Check symbol or date range.")
+        # Validate date range early
+        if start_date > end_date:
+            st.error("⚠️ Start Date must be before End Date.")
         else:
-            # Show recent data
-            st.subheader(f"📌 Showing data for **{ticker}**")
-            st.dataframe(data.tail(), use_container_width=True)
+            # Load data
+            data = load_data(ticker, start_date, end_date)
 
-            # Line chart (Closing price)
-            st.subheader("📊 Closing Price Over Time")
-            st.line_chart(data.set_index("Date")["Close"], use_container_width=True)
-
-            # Stock Statistics
-            st.subheader("📌 Stock Statistics")
-            col1, col2, col3 = st.columns(3)
-            
-            # Detect currency (₹ for Indian stocks/indices, $ for US)
-            if ticker.endswith(".NS") or ticker in ["^NSEI", "^BSESN"]:
-                currency = "₹"
+            if data.empty:
+                st.error("⚠️ No data found! Check symbol or date range.")
             else:
-                currency = "$"
-            
-            # Ensure values are floats, not Series
-            latest_close = data['Close'].iloc[-1]
-            if hasattr(latest_close, "item"):  # if it's a Series with one value
-                latest_close = latest_close.item()
-            
-            highest_price = data['High'].max()
-            if hasattr(highest_price, "item"):
-                highest_price = highest_price.item()
-            
-            lowest_price = data['Low'].min()
-            if hasattr(lowest_price, "item"):
-                lowest_price = lowest_price.item()
-            
-            col1.metric("Latest Closing Price", f"{currency}{latest_close:.2f}")
-            col2.metric("Highest Price", f"{currency}{highest_price:.2f}")
-            col3.metric("Lowest Price", f"{currency}{lowest_price:.2f}")
+                # Show recent data
+                st.subheader(f"📌 Showing data for **{ticker}**")
+                st.dataframe(data.tail(), use_container_width=True)
 
+                # Prepare Close series safely for chart
+                if "Close" in data.columns:
+                    close_ser = _get_column_as_series(data, "Close")
+                    close_plot = pd.DataFrame({"Close": close_ser.values}, index=data["Date"])
+                    st.subheader("📊 Closing Price Over Time")
+                    st.line_chart(close_plot["Close"], use_container_width=True)
 
-            # Volume chart (if available)
-            if "Volume" in data.columns and data["Volume"].sum() > 0:
-                st.subheader("📊 Trading Volume")
-                st.bar_chart(data.set_index("Date")["Volume"], use_container_width=True)
+                # Stock Statistics
+                st.subheader("📌 Stock Statistics")
+                col1, col2, col3 = st.columns(3)
+                
+                # Detect currency (₹ for Indian stocks/indices, $ for US)
+                if ticker.endswith(".NS") or ticker in ["^NSEI", "^BSESN"]:
+                    currency = "₹"
+                else:
+                    currency = "$"
+                
+                # Safely compute metrics
+                # Close
+                if "Close" in data.columns:
+                    close_ser = _get_column_as_series(data, "Close")
+                    latest_close_val = float(close_ser.iloc[-1])
+                else:
+                    latest_close_val = float("nan")
+
+                # High
+                if "High" in data.columns:
+                    high_ser = _get_column_as_series(data, "High")
+                    highest_price_val = float(high_ser.max())
+                else:
+                    highest_price_val = float("nan")
+
+                # Low
+                if "Low" in data.columns:
+                    low_ser = _get_column_as_series(data, "Low")
+                    lowest_price_val = float(low_ser.min())
+                else:
+                    lowest_price_val = float("nan")
+                
+                col1.metric("Latest Closing Price", f"{currency}{latest_close_val:.2f}")
+                col2.metric("Highest Price", f"{currency}{highest_price_val:.2f}")
+                col3.metric("Lowest Price", f"{currency}{lowest_price_val:.2f}")
+
+                # Volume chart (if available) - avoid ambiguous boolean checks
+                if "Volume" in data.columns:
+                    vol_ser = _get_column_as_series(data, "Volume")
+                    vol_sum = float(vol_ser.fillna(0).sum())
+                    if vol_sum > 0:
+                        st.subheader("📊 Trading Volume")
+                        vol_plot = pd.DataFrame({"Volume": vol_ser.values}, index=data["Date"])
+                        st.bar_chart(vol_plot["Volume"], use_container_width=True)
 
     except Exception as e:
         st.error(f"⚠️ Error fetching data: {e}")
+
