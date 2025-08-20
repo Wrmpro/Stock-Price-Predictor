@@ -48,7 +48,21 @@ else:
 @st.cache_data
 def load_data(symbol, start, end):
     data = yf.download(symbol, start=start, end=end, progress=False)
+    
+    # Handle MultiIndex columns that yfinance sometimes returns
+    if isinstance(data.columns, pd.MultiIndex):
+        # Flatten MultiIndex columns by taking the first level (price type)
+        data.columns = data.columns.get_level_values(0)
+    
     data.reset_index(inplace=True)
+    
+    # Ensure the date column is named "Date" for consistency
+    if 'Date' not in data.columns and len(data.columns) > 0:
+        # The first column after reset_index should be the date
+        date_column = data.columns[0]
+        if date_column in ['index', 'Datetime'] or 'date' in date_column.lower():
+            data.rename(columns={date_column: 'Date'}, inplace=True)
+    
     return data
 
 # --- Main Section ---
@@ -80,9 +94,15 @@ try:
         col3.metric("Lowest Price", f"{currency}{lowest_price:.2f}")
 
         # Volume chart
-        if "Volume" in data.columns and data["Volume"].sum() > 0:
-            st.subheader("📊 Trading Volume")
-            st.bar_chart(data.set_index("Date")["Volume"], use_container_width=True)
+        if "Volume" in data.columns:
+            volume_sum = data["Volume"].sum()
+            # Handle potential Series boolean ambiguity by converting to scalar
+            if isinstance(volume_sum, pd.Series):
+                volume_sum = volume_sum.iloc[0] if len(volume_sum) > 0 else 0
+            
+            if volume_sum > 0:
+                st.subheader("📊 Trading Volume")
+                st.bar_chart(data.set_index("Date")["Volume"], use_container_width=True)
 
 except Exception as e:
     st.error(f"⚠️ Error fetching data: {e}")
