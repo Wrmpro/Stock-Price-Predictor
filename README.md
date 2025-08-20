@@ -1,4 +1,5 @@
 
+
 # 📈 Stock Price Predictor & Visualization App
 
 An end-to-end project that combines **Machine Learning-based stock price prediction** with an **interactive Streamlit dashboard** for visualization and analysis.
@@ -14,11 +15,11 @@ This project allows you to:
 
 ## 🚀 Features
 
-✅ **Historical Data Training** – Linear Regression (extendable to LSTM, XGBoost, etc.)
-✅ **Interactive Streamlit Dashboard** – View stock charts and stats
-✅ **Supports US & Indian Stocks** (AAPL, TSLA, RELIANCE.NS, TCS.NS, etc.)
-✅ **Indices Support** – NIFTY 50 (^NSEI), SENSEX (^BSESN)
-✅ 📊 Closing price trends, 📌 Stock statistics, 📉 Trading volume
+- ✅ **Historical Data Training** – Linear Regression (extendable to LSTM, XGBoost, etc.)
+- ✅ **Interactive Streamlit Dashboard** – View stock charts and stats
+- ✅ **Supports US & Indian Stocks** (AAPL, TSLA, RELIANCE.NS, TCS.NS, etc.)
+- ✅ **Indices Support** – NIFTY 50 (^NSEI), SENSEX (^BSESN)
+- 📊 **Closing price trends**, 📌 **Stock statistics**, 📉 **Trading volume**
 
 ---
 
@@ -97,7 +98,7 @@ streamlit run app.py
 
 ## 🌐 Live Demo
 
-👉 [Try the Streamlit App](https://stock-price-prediction-using-ml.streamlit.app/)
+👉 [Try the Streamlit App](https://your-app-link.streamlit.app)
 
 ---
 
@@ -123,3 +124,7 @@ streamlit run app.py
 This project is licensed under the **MIT License**.
 
 ---
+
+
+
+Do you want me to also **add screenshots/GIF preview** sections in this README (to show charts/UI from your app)? That will make it stand out on GitHub.
