@@ -102,14 +102,24 @@ if ticker:
             # Stock Statistics
             if not data.empty:
                 st.subheader("📌 Stock Statistics")
-                col1, col2, col3 = st.columns(3)
+                scol1, col2, col3 = st.columns(3)
 
-                # Detect currency
-                currency = "₹" if ticker.endswith(".NS") or ticker in index_options.values() else "$"
+# Detect currency (₹ for Indian stocks/indices, $ for US)
+if ticker.endswith(".NS") or ticker in ["^NSEI", "^BSESN"]:
+    currency = "₹"
+else:
+    currency = "$"
 
-                col1.metric("Latest Closing Price", f"{currency}{data['Close'].iloc[-1]:.2f}")
-                col2.metric("Highest Price", f"{currency}{data['High'].max():.2f}")
-                col3.metric("Lowest Price", f"{currency}{data['Low'].min():.2f}")
+# Ensure values are floats, not Series
+latest_close = float(data['Close'].iloc[-1])
+highest_price = float(data['High'].max())
+lowest_price = float(data['Low'].min())
+
+col1.metric("Latest Closing Price", f"{currency}{latest_close:.2f}")
+col2.metric("Highest Price", f"{currency}{highest_price:.2f}")
+col3.metric("Lowest Price", f"{currency}{lowest_price:.2f}")
+
+              
             else:
                 st.warning("⚠️ No data available for this stock/period.")
 
