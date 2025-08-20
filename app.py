@@ -1,4 +1,4 @@
-import streamlit as st
+-import streamlit as st
 import yfinance as yf
 import pandas as pd
 import datetime
@@ -16,7 +16,7 @@ st.sidebar.markdown(
     ✅ **Examples**  
     - US Stocks: `AAPL`, `TSLA`, `MSFT`  
     - Indian Stocks: `RELIANCE.NS`, `TCS.NS`, `HDFCBANK.NS`  
-    - Indices: `NIFTY 50`, `SENSEX`
+    - Indices: `NIFTY 50-^NSEI`, `SENSEX-^BSESN`
     """
 )
 
