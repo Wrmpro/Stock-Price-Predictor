@@ -35,13 +35,14 @@ for col, sym in zip(cols, examples):
     if col.button(sym.replace("^NSEI", "NIFTY 50").replace("^BSESN", "SENSEX")):
         ticker_symbol = sym
 
-# --- Decide final ticker ---
-if ticker_symbol.strip():
+# --- Decide final ticker safely ---
+ticker_symbol = str(ticker_symbol)
+if ticker_symbol.strip() != "":
     ticker = ticker_symbol.strip().upper()
 elif selected_index != "None":
     ticker = index_options[selected_index]
 else:
-    ticker = "AAPL"  # default
+    ticker = "AAPL"
 
 # --- Load data function ---
 @st.cache_data
