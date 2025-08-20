@@ -1,95 +1,125 @@
-📈 Stock Price Predictor
 
-A machine learning project that predicts stock prices using historical data.
-Currently implemented with Linear Regression, but extendable with advanced models such as LSTM, GRU, XGBoost, etc.
+# 📈 Stock Price Predictor & Visualization App
 
-🚀 Features
+An end-to-end project that combines **Machine Learning-based stock price prediction** with an **interactive Streamlit dashboard** for visualization and analysis.
 
-✅ Fetches stock data using yFinance
-✅ Trains a regression model on historical data
-✅ Predicts future stock prices
-✅ Visualizes results with Matplotlib & Streamlit
-✅ Clean and interactive web UI
+This project allows you to:
 
-🛠 Tech Stack
+* Train ML models on historical stock data
+* Predict future stock prices
+* Explore real-time stock and index data (US + Indian markets)
+* Visualize trends, statistics, and volumes interactively
 
-Python 3
+---
 
-NumPy, Pandas → Data handling
+## 🚀 Features
 
-Scikit-learn → Machine Learning
+✅ **Historical Data Training** – Linear Regression (extendable to LSTM, XGBoost, etc.)
+✅ **Interactive Streamlit Dashboard** – View stock charts and stats
+✅ **Supports US & Indian Stocks** (AAPL, TSLA, RELIANCE.NS, TCS.NS, etc.)
+✅ **Indices Support** – NIFTY 50 (^NSEI), SENSEX (^BSESN)
+✅ 📊 Closing price trends, 📌 Stock statistics, 📉 Trading volume
 
-Matplotlib → Visualization
+---
 
-yFinance → Stock data
+## 🔑 Example Stock Symbols
 
-Streamlit → Web app deployment
+* **US Stocks:** `AAPL`, `TSLA`, `MSFT`
+* **Indian Stocks:** `RELIANCE.NS`, `TCS.NS`, `HDFCBANK.NS`
+* **Indices:** `^NSEI` (NIFTY 50), `^BSESN` (SENSEX)
 
-🔧 Installation
+👉 For Indian stocks, add `.NS` at the end (e.g., `INFY.NS`)
 
-Clone the repository
+---
 
-git clone https://github.com/your-username/stock-price-predictor.git
-cd stock-price-predictor
+## 🛠️ Tech Stack
 
+* **Python 3**
+* **Streamlit** – dashboard & visualization
+* **yfinance** – stock market data
+* **scikit-learn** – ML models (Linear Regression)
+* **pandas, numpy** – data handling
+* **matplotlib** – visualization
 
-Install dependencies
+---
 
-pip install -r requirements.txt
+## 📂 Project Structure
 
+```
+📦 stock-price-predictor
+ ┣ 📜 README.md             # Documentation
+ ┣ 📜 requirements.txt      # Dependencies
+ ┣ 📜 setup.py              # Setup file
+ ┣ 📜 app.py                # Streamlit app (visualization dashboard)
+ ┣ 📂 src/                  # ML prediction pipeline
+ ┃ ┣ 📜 main.py             # Entry point for ML model training/prediction
+ ┃ ┗ 📂 spp/
+ ┃   ┣ 📜 __init__.py
+ ┃   ┣ 📜 data_loader.py    # Fetches and preprocesses stock data
+ ┃   ┣ 📜 model.py          # ML model (Linear Regression, extendable)
+ ┃   ┗ 📜 utils.py          # Helper functions
+```
 
-Run the Streamlit app
+---
 
+## 🔧 Installation
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/your-username/stock-price-predictor.git
+   cd stock-price-predictor
+   ```
+
+2. Install dependencies:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+---
+
+## ▶️ Usage
+
+### 🧠 Run the ML Predictor
+
+```bash
+python src/main.py
+```
+
+### 🌐 Run the Streamlit Dashboard
+
+```bash
 streamlit run app.py
+```
 
+---
 
-Open http://localhost:8501
- in your browser.
+## 🌐 Live Demo
 
-📂 Project Structure
-stock-price-predictor/
-│── README.md
-│── requirements.txt
-│── setup.py
-│── app.py
-│── src/
-│   ├── main.py
-│   └── spp/
-│       ├── __init__.py
-│       ├── data_loader.py
-│       ├── model.py
-│       └── utils.py
+👉 [Try the Streamlit App](https://stock-price-prediction-using-ml.streamlit.app/)
 
-## Live App
+---
 
-👉[Try the app here](https://stock-price-prediction-using-ml.streamlit.app/)
+## 💡 Future Enhancements
 
+* Add **deep learning models (LSTM, GRU, Prophet)**
+* Add **real-time stock prediction**
+* Add **portfolio tracking & alerts**
+* Integrate **news sentiment analysis**
 
-🖥 Example Screenshots
+---
 
-📊 Closing Price Trend
-📊 Predicted vs Actual Prices
+## 👨‍💻 Author
 
-(You can add screenshots of your Streamlit app here once deployed.)
+**Shashank N**
 
-💡 Future Enhancements
+> Aspiring Software Engineer | AI-ML Enthusiast | Passionate about building impactful projects
 
-Add deep learning models (LSTM, GRU)
+---
 
-Use real-time stock data APIs
+## 📄 License
 
-Deploy using Flask/Django or FastAPI
+This project is licensed under the **MIT License**.
 
-Integrate database for saving predictions
-
-Add moving averages & technical indicators
-
-👨‍💻 Author
-
-Shashank N
-
-Aspiring Software Engineer | AI-ML Enthusiast | Passionate about building impactful projects
-
-📄 License
-
-This project is licensed under the MIT License.
+---
