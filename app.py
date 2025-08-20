@@ -102,7 +102,7 @@ if ticker:
 
             # Stock Statistics
             st.subheader("📌 Stock Statistics")
-            scol1, col2, col3 = st.columns(3)
+            col1, col2, col3 = st.columns(3)
 
             # Detect currency (₹ for Indian stocks/indices, $ for US)
             if ticker.endswith(".NS") or ticker in ["^NSEI", "^BSESN"]:
@@ -115,7 +115,7 @@ if ticker:
             highest_price = float(data['High'].max())
             lowest_price = float(data['Low'].min())
 
-            scol1.metric("Latest Closing Price", f"{currency}{latest_close:.2f}")
+            col1.metric("Latest Closing Price", f"{currency}{latest_close:.2f}")
             col2.metric("Highest Price", f"{currency}{highest_price:.2f}")
             col3.metric("Lowest Price", f"{currency}{lowest_price:.2f}")
 
