@@ -16,7 +16,7 @@ st.sidebar.markdown(
     ✅ **Examples**  
     - US Stocks: `AAPL`, `TSLA`, `MSFT`  
     - Indian Stocks: `RELIANCE.NS`, `TCS.NS`, `HDFCBANK.NS`  
-    - Indices: `NIFTY 50-^NSEI`, `SENSEX-^BSESN`
+    - Indices: `NIFTY 50 - ^NSEI`, `SENSEX - ^BSESN`
     """
 )
 
@@ -100,28 +100,23 @@ if ticker:
             st.line_chart(data.set_index("Date")["Close"], use_container_width=True)
 
             # Stock Statistics
-            if not data.empty:
-                st.subheader("📌 Stock Statistics")
-                scol1, col2, col3 = st.columns(3)
+            st.subheader("📌 Stock Statistics")
+            scol1, col2, col3 = st.columns(3)
 
-# Detect currency (₹ for Indian stocks/indices, $ for US)
-if ticker.endswith(".NS") or ticker in ["^NSEI", "^BSESN"]:
-    currency = "₹"
-else:
-    currency = "$"
-
-# Ensure values are floats, not Series
-latest_close = float(data['Close'].iloc[-1])
-highest_price = float(data['High'].max())
-lowest_price = float(data['Low'].min())
-
-col1.metric("Latest Closing Price", f"{currency}{latest_close:.2f}")
-col2.metric("Highest Price", f"{currency}{highest_price:.2f}")
-col3.metric("Lowest Price", f"{currency}{lowest_price:.2f}")
-
-              
+            # Detect currency (₹ for Indian stocks/indices, $ for US)
+            if ticker.endswith(".NS") or ticker in ["^NSEI", "^BSESN"]:
+                currency = "₹"
             else:
-                st.warning("⚠️ No data available for this stock/period.")
+                currency = "$"
+
+            # Ensure values are floats, not Series
+            latest_close = float(data['Close'].iloc[-1])
+            highest_price = float(data['High'].max())
+            lowest_price = float(data['Low'].min())
+
+            scol1.metric("Latest Closing Price", f"{currency}{latest_close:.2f}")
+            col2.metric("Highest Price", f"{currency}{highest_price:.2f}")
+            col3.metric("Lowest Price", f"{currency}{lowest_price:.2f}")
 
             # Volume chart (if available)
             if "Volume" in data.columns and data["Volume"].sum() > 0:
