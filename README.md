@@ -15,9 +15,13 @@ This project allows you to:
 ## 🚀 Features
 
 ✅ **Historical Data Training** – Linear Regression (extendable to LSTM, XGBoost, etc.)
+
 ✅ **Interactive Streamlit Dashboard** – View stock charts and stats
+
 ✅ **Supports US & Indian Stocks** (AAPL, TSLA, RELIANCE.NS, TCS.NS, etc.)
+
 ✅ **Indices Support** – NIFTY 50 (^NSEI), SENSEX (^BSESN)
+
 ✅ 📊 Closing price trends, 📌 Stock statistics, 📉 Trading volume
 
 ---
