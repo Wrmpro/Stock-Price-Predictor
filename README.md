@@ -99,7 +99,7 @@ streamlit run app.py
 
 ## 🌐 Live Demo
 
-👉 [Try the Streamlit App](https://your-app-link.streamlit.app)
+👉 [Try the Streamlit App](https://stock-price-prediction-using-ml.streamlit.app/)
 
 
 ---
