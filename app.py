@@ -69,11 +69,12 @@ with col8:
 
 # --- Decide final ticker ---
 if ticker_symbol.strip():
-    ticker = ticker_symbol.strip().upper()
+    ticker = str(ticker_symbol.strip().upper())
 elif selected_index != "None":
-    ticker = index_options[selected_index]
+    ticker = str(index_options[selected_index])
 else:
     ticker = "AAPL"  # default
+
 
 # Function to fetch stock data
 @st.cache_data
