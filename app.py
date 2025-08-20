@@ -3,6 +3,7 @@ import yfinance as yf
 import pandas as pd
 import datetime
 
+# Page config
 st.set_page_config(page_title="Stock Price App", page_icon="📈", layout="wide")
 
 st.title("📈 Stock Price Visualization App")
@@ -17,7 +18,7 @@ ticker_symbol = st.sidebar.text_input("Enter Stock Symbol (e.g., AAPL, TSLA, MSF
 start_date = st.sidebar.date_input("Start Date", datetime.date(2020, 1, 1))
 end_date = st.sidebar.date_input("End Date", datetime.date.today())
 
-# Fetch data
+# Function to fetch stock data
 @st.cache_data
 def load_data(symbol, start, end):
     data = yf.download(symbol, start=start, end=end)
@@ -26,20 +27,27 @@ def load_data(symbol, start, end):
 
 if ticker_symbol:
     try:
+        # Load data
         data = load_data(ticker_symbol, start_date, end_date)
 
+        # Show recent data
         st.subheader(f"Showing data for {ticker_symbol}")
-        st.write(data.tail())
+        st.dataframe(data.tail(), use_container_width=True)
 
-        # Line chart
+        # Line chart (Closing price)
+        st.subheader("📊 Closing Price Over Time")
         st.line_chart(data.set_index("Date")["Close"], use_container_width=True)
 
         # Extra info
-        st.subheader("Stock Statistics")
-        st.metric("Latest Closing Price", f"${data['Close'].iloc[-1]:.2f}")
-        st.metric("Highest Price", f"${data['High'].max():.2f}")
-        st.metric("Lowest Price", f"${data['Low'].min():.2f}")
+        st.subheader("📌 Stock Statistics")
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Latest Closing Price", f"${data['Close'].iloc[-1]:.2f}")
+        col2.metric("Highest Price", f"${data['High'].max():.2f}")
+        col3.metric("Lowest Price", f"${data['Low'].min():.2f}")
+
+        # Optional: Volume chart
+        st.subheader("📊 Trading Volume")
+        st.bar_chart(data.set_index("Date")["Volume"], use_container_width=True)
 
     except Exception as e:
         st.error(f"Error fetching data: {e}")
-
