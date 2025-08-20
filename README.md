@@ -96,9 +96,11 @@ streamlit run app.py
 
 ---
 
+
 ## 🌐 Live Demo
 
 👉 [Try the Streamlit App](https://your-app-link.streamlit.app)
+
 
 ---
 
