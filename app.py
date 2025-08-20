@@ -34,7 +34,40 @@ ticker_symbol = st.sidebar.text_input("Enter Stock Symbol:", "")
 start_date = st.sidebar.date_input("Start Date", datetime.date(2020, 1, 1))
 end_date = st.sidebar.date_input("End Date", datetime.date.today())
 
-# Decide ticker
+# --- Example Quick Buttons Section ---
+st.markdown("### ✅ Quick Examples")
+
+col1, col2, col3 = st.columns(3)
+with col1:
+    if st.button("AAPL (Apple)"):
+        ticker_symbol = "AAPL"
+with col2:
+    if st.button("TSLA (Tesla)"):
+        ticker_symbol = "TSLA"
+with col3:
+    if st.button("MSFT (Microsoft)"):
+        ticker_symbol = "MSFT"
+
+col4, col5, col6 = st.columns(3)
+with col4:
+    if st.button("RELIANCE.NS"):
+        ticker_symbol = "RELIANCE.NS"
+with col5:
+    if st.button("TCS.NS"):
+        ticker_symbol = "TCS.NS"
+with col6:
+    if st.button("HDFCBANK.NS"):
+        ticker_symbol = "HDFCBANK.NS"
+
+col7, col8 = st.columns(2)
+with col7:
+    if st.button("NIFTY 50"):
+        ticker_symbol = "^NSEI"
+with col8:
+    if st.button("SENSEX"):
+        ticker_symbol = "^BSESN"
+
+# --- Decide final ticker ---
 if ticker_symbol.strip():
     ticker = ticker_symbol.strip().upper()
 elif selected_index != "None":
@@ -49,6 +82,7 @@ def load_data(symbol, start, end):
     data.reset_index(inplace=True)
     return data
 
+# --- Main Section ---
 if ticker:
     try:
         # Load data
@@ -65,17 +99,22 @@ if ticker:
             st.subheader("📊 Closing Price Over Time")
             st.line_chart(data.set_index("Date")["Close"], use_container_width=True)
 
-            # Extra info
-            st.subheader("📌 Stock Statistics")
-            col1, col2, col3 = st.columns(3)
+            # Stock Statistics
+            if not data.empty:
+                st.subheader("📌 Stock Statistics")
+                col1, col2, col3 = st.columns(3)
 
-            currency = "₹" if ticker.endswith(".NS") or ticker in index_options.values() else "$"
-            col1.metric("Latest Closing Price", f"{currency}{data['Close'].iloc[-1]:.2f}")
-            col2.metric("Highest Price", f"{currency}{data['High'].max():.2f}")
-            col3.metric("Lowest Price", f"{currency}{data['Low'].min():.2f}")
+                # Detect currency
+                currency = "₹" if ticker.endswith(".NS") or ticker in index_options.values() else "$"
 
-            # Optional: Volume chart (not all indices have volume)
-            if "Volume" in data.columns:
+                col1.metric("Latest Closing Price", f"{currency}{data['Close'].iloc[-1]:.2f}")
+                col2.metric("Highest Price", f"{currency}{data['High'].max():.2f}")
+                col3.metric("Lowest Price", f"{currency}{data['Low'].min():.2f}")
+            else:
+                st.warning("⚠️ No data available for this stock/period.")
+
+            # Volume chart (if available)
+            if "Volume" in data.columns and data["Volume"].sum() > 0:
                 st.subheader("📊 Trading Volume")
                 st.bar_chart(data.set_index("Date")["Volume"], use_container_width=True)
 
