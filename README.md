@@ -127,6 +127,3 @@ This project is licensed under the **MIT License**.
 
 ---
 
-
-
-Do you want me to also **add screenshots/GIF preview** sections in this README (to show charts/UI from your app)? That will make it stand out on GitHub.
