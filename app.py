@@ -31,23 +31,37 @@ end_date = st.sidebar.date_input("End Date", datetime.date.today())
 st.markdown("### ✅ Quick Examples")
 cols = st.columns(8)
 examples = ["AAPL", "TSLA", "MSFT", "RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "^NSEI", "^BSESN"]
+
+# Initialize session state for selected ticker if not exists
+if 'selected_ticker' not in st.session_state:
+    st.session_state.selected_ticker = ""
+
 for col, sym in zip(cols, examples):
     if col.button(sym.replace("^NSEI", "NIFTY 50").replace("^BSESN", "SENSEX")):
-        ticker_symbol = sym
+        st.session_state.selected_ticker = sym
 
 # --- Decide final ticker safely ---
 ticker_symbol = str(ticker_symbol)
+
+# Priority: 1. Text input, 2. Session state from buttons, 3. Index selection, 4. Default
 if ticker_symbol.strip() != "":
     ticker = ticker_symbol.strip().upper()
+    # Clear session state when manual input is used
+    st.session_state.selected_ticker = ""
+elif st.session_state.selected_ticker:
+    ticker = st.session_state.selected_ticker
 elif selected_index != "None":
     ticker = index_options[selected_index]
 else:
     ticker = "AAPL"
 
+# Show current selection
+st.info(f"📊 **Currently selected:** {ticker}")
+
 # --- Load data function ---
 @st.cache_data
 def load_data(symbol, start, end):
-    data = yf.download(symbol, start=start, end=end, progress=False)
+    data = yf.download(symbol, start=start, end=end, progress=False, auto_adjust=True)
     data.reset_index(inplace=True)
     return data
 
@@ -56,7 +70,12 @@ try:
     data = load_data(ticker, start_date, end_date)
 
     if data.empty:
-        st.error("⚠️ No data found! Check symbol or date range.")
+        st.error(f"⚠️ No data found for **{ticker}**! Please check:")
+        st.markdown("""
+        - Symbol spelling (e.g., `AAPL`, `RELIANCE.NS`, `^NSEI`)
+        - Date range (data might not be available for selected period)
+        - Network connectivity
+        """)
     else:
         # Show recent data
         st.subheader(f"📌 Showing data for **{ticker}**")
@@ -85,4 +104,11 @@ try:
             st.bar_chart(data.set_index("Date")["Volume"], use_container_width=True)
 
 except Exception as e:
-    st.error(f"⚠️ Error fetching data: {e}")
+    st.error(f"⚠️ Error fetching data for **{ticker}**: {e}")
+    st.markdown("""
+    **Troubleshooting:**
+    - Check your internet connection
+    - Verify the stock symbol is correct
+    - Try a different date range
+    - Some symbols might be temporarily unavailable
+    """)
