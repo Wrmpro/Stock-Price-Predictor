@@ -1,172 +1,129 @@
+# app.py
 import streamlit as st
 import yfinance as yf
 import pandas as pd
-import datetime
+import numpy as np
+import joblib
+import xgboost as xgb
+from datetime import datetime, timedelta
+from src.spp.feature_engineering import add_basic_features
+from src.spp.model import xgb_predict, create_sequences
+import plotly.graph_objects as go
+import os
 
-# Page config
-st.set_page_config(page_title="Stock & Index Tracker", page_icon="📈", layout="wide")
+st.set_page_config(page_title="Stock Price Predictor", page_icon="📈", layout="wide")
+st.title("📈 Stock Price Predictor & Visualizer")
 
-st.title("📈 Stock & Index Visualization App")
+# Sidebar
+st.sidebar.header("Configuration")
 
-# Sidebar for user input
-st.sidebar.header("Stock / Index Selection")
+symbol = st.sidebar.text_input("Ticker (e.g., AAPL or RELIANCE.NS)", value="AAPL")
+start = st.sidebar.date_input("Start date", value=datetime(2018,1,1))
+end = st.sidebar.date_input("End date", value=datetime.today())
 
 st.sidebar.markdown(
     """
     ✅ **Examples**  
     - US Stocks: `AAPL`, `TSLA`, `MSFT`  
     - Indian Stocks: `RELIANCE.NS`, `TCS.NS`, `HDFCBANK.NS`  
-    - Indices: `NIFTY 50 - ^NSEI`, `SENSEX - ^BSESN`
+    - Indices: `^NSEI` (NIFTY 50), `^BSESN` (SENSEX)
     """
 )
 
-# Dropdown for popular Indian indices
-index_options = {
-    "NIFTY 50": "^NSEI",
-    "SENSEX (BSE 30)": "^BSESN"
-}
-selected_index = st.sidebar.selectbox("Choose Index (Optional)", ["None"] + list(index_options.keys()))
-
-# Stock symbol input (overrides index if entered)
-ticker_symbol = st.sidebar.text_input("Enter Stock Symbol:", "")
-
-# Date range input
-start_date = st.sidebar.date_input("Start Date", datetime.date(2020, 1, 1))
-end_date = st.sidebar.date_input("End Date", datetime.date.today())
-
-# --- Example Quick Buttons Section ---
-st.markdown("### ✅ Quick Examples")
-
-col1, col2, col3 = st.columns(3)
+# Quick access buttons
+st.markdown("### ✅ Quick Stock Selection")
+col1, col2, col3, col4 = st.columns(4)
 with col1:
-    if st.button("AAPL (Apple)"):
-        ticker_symbol = "AAPL"
+    if st.button("AAPL"):
+        symbol = "AAPL"
 with col2:
-    if st.button("TSLA (Tesla)"):
-        ticker_symbol = "TSLA"
+    if st.button("TSLA"):
+        symbol = "TSLA"
 with col3:
-    if st.button("MSFT (Microsoft)"):
-        ticker_symbol = "MSFT"
-
-col4, col5, col6 = st.columns(3)
+    if st.button("MSFT"):
+        symbol = "MSFT"
 with col4:
     if st.button("RELIANCE.NS"):
-        ticker_symbol = "RELIANCE.NS"
-with col5:
-    if st.button("TCS.NS"):
-        ticker_symbol = "TCS.NS"
-with col6:
-    if st.button("HDFCBANK.NS"):
-        ticker_symbol = "HDFCBANK.NS"
+        symbol = "RELIANCE.NS"
 
-col7, col8 = st.columns(2)
-with col7:
-    if st.button("NIFTY 50"):
-        ticker_symbol = "^NSEI"
-with col8:
-    if st.button("SENSEX"):
-        ticker_symbol = "^BSESN"
+# Data loading
+if st.button("Load Data"):
+    df = yf.download(symbol, start=start, end=end, progress=False)
+    if df.empty:
+        st.error("No data found for symbol.")
+    else:
+        st.success(f"Loaded {len(df)} rows.")
+        st.dataframe(df.tail(), use_container_width=True)
+        
+        # Basic visualization
+        st.subheader("📊 Closing Price Over Time")
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name='Close Price'))
+        fig.update_layout(xaxis_title="Date", yaxis_title="Price", height=400)
+        st.plotly_chart(fig, use_container_width=True)
 
-# --- Decide final ticker ---
-if ticker_symbol.strip():
-    ticker = str(ticker_symbol.strip().upper())
-elif selected_index != "None":
-    ticker = str(index_options[selected_index])
-else:
-    ticker = "AAPL"  # default
+# Model prediction section
+st.markdown("---")
+st.subheader("🤖 ML Prediction")
 
+model_choice = st.selectbox("Select Model", ["XGBoost (tabular)", "LSTM (sequence)"])
 
-# Helpers to normalize yfinance columns
-def _get_column_as_series(df: pd.DataFrame, col_name: str) -> pd.Series:
-    """
-    Return the requested column as a 1-D Series, even if df[col_name] is a DataFrame
-    (e.g., from multi-index columns). If multiple subcolumns exist, take the first.
-    """
-    col = df[col_name]
-    if isinstance(col, pd.DataFrame):
-        # Reduce to first sub-column if multi-dimensional
-        col = col.iloc[:, 0]
-    # Ensure numeric if possible
-    col = pd.to_numeric(col, errors="coerce")
-    return col
-
-
-# Function to fetch stock data
-@st.cache_data
-def load_data(symbol, start, end):
-    data = yf.download(symbol, start=start, end=end)
-    data.reset_index(inplace=True)
-    return data
-
-# --- Main Section ---
-if ticker:
-    try:
-        # Validate date range early
-        if start_date > end_date:
-            st.error("⚠️ Start Date must be before End Date.")
-        else:
-            # Load data
-            data = load_data(ticker, start_date, end_date)
-
-            if data.empty:
-                st.error("⚠️ No data found! Check symbol or date range.")
+if st.button("Predict Next Days"):
+    df = yf.download(symbol, start=start, end=end, progress=False)
+    if df.empty:
+        st.error("No data found.")
+    else:
+        if model_choice.startswith("XGBoost"):
+            # load model and scaler
+            if not os.path.exists('models/xgb_model.json') or not os.path.exists('models/xgb_scaler.pkl'):
+                st.error("❌ XGBoost model not found. Train it using: `python src/main.py`")
+                st.info("💡 Run the following command in your terminal:\n```bash\npython src/main.py\n```")
             else:
-                # Show recent data
-                st.subheader(f"📌 Showing data for **{ticker}**")
-                st.dataframe(data.tail(), use_container_width=True)
+                with st.spinner("Loading model and generating predictions..."):
+                    scaler = joblib.load('models/xgb_scaler.pkl')
+                    bst = xgb.Booster()
+                    bst.load_model('models/xgb_model.json')
+                    df_feat = add_basic_features(df, close_col='Close')
+                    X = df_feat.drop(columns=['Open','High','Low','Close','Volume'], errors='ignore')
+                    X_s = scaler.transform(X)
+                    preds = xgb_predict(bst, X_s)
+                    
+                    # show last actual vs predicted
+                    last_n = min(200, len(df_feat))
+                    fig = go.Figure()
+                    fig.add_trace(go.Scatter(x=df_feat.index[-last_n:], 
+                                            y=df['Close'].loc[df_feat.index][-last_n:], 
+                                            name='Actual', mode='lines'))
+                    fig.add_trace(go.Scatter(x=df_feat.index[-last_n:], 
+                                            y=preds[-last_n:], 
+                                            name='Predicted', mode='lines'))
+                    fig.update_layout(title=f"{symbol} - Actual vs Predicted Prices",
+                                     xaxis_title="Date", 
+                                     yaxis_title="Price",
+                                     height=500)
+                    st.plotly_chart(fig, use_container_width=True)
+                    
+                    # Show recent predictions
+                    st.write("📋 Recent Predictions:")
+                    pred_df = pd.DataFrame({
+                        'Date': df_feat.index[-10:],
+                        'Actual': df['Close'].loc[df_feat.index][-10:].values,
+                        'Predicted': preds[-10:]
+                    })
+                    pred_df['Error'] = abs(pred_df['Actual'] - pred_df['Predicted'])
+                    pred_df['Error %'] = (pred_df['Error'] / pred_df['Actual'] * 100).round(2)
+                    st.dataframe(pred_df, use_container_width=True)
+        else:
+            st.info("🔄 LSTM support: Please train a model first by running:\n```bash\npython src/main.py\n```\nThen place models/lstm.h5 and models/lstm_scaler.pkl in the repo.")
 
-                # Prepare Close series safely for chart
-                if "Close" in data.columns:
-                    close_ser = _get_column_as_series(data, "Close")
-                    close_plot = pd.DataFrame({"Close": close_ser.values}, index=data["Date"])
-                    st.subheader("📊 Closing Price Over Time")
-                    st.line_chart(close_plot["Close"], use_container_width=True)
+st.markdown("---")
+st.markdown("""
+### 💡 Tips
+- **XGBoost**: Fast, strong baseline for tabular time-series features. Train first for best results.
+- **LSTM**: Requires more data (3+ years) and GPU if available for longer-horizon forecasting.
+- **Training**: Run `python src/main.py` to train models before prediction.
+""")
 
-                # Stock Statistics
-                st.subheader("📌 Stock Statistics")
-                col1, col2, col3 = st.columns(3)
-                
-                # Detect currency (₹ for Indian stocks/indices, $ for US)
-                if ticker.endswith(".NS") or ticker in ["^NSEI", "^BSESN"]:
-                    currency = "₹"
-                else:
-                    currency = "$"
-                
-                # Safely compute metrics
-                # Close
-                if "Close" in data.columns:
-                    close_ser = _get_column_as_series(data, "Close")
-                    latest_close_val = float(close_ser.iloc[-1])
-                else:
-                    latest_close_val = float("nan")
-
-                # High
-                if "High" in data.columns:
-                    high_ser = _get_column_as_series(data, "High")
-                    highest_price_val = float(high_ser.max())
-                else:
-                    highest_price_val = float("nan")
-
-                # Low
-                if "Low" in data.columns:
-                    low_ser = _get_column_as_series(data, "Low")
-                    lowest_price_val = float(low_ser.min())
-                else:
-                    lowest_price_val = float("nan")
-                
-                col1.metric("Latest Closing Price", f"{currency}{latest_close_val:.2f}")
-                col2.metric("Highest Price", f"{currency}{highest_price_val:.2f}")
-                col3.metric("Lowest Price", f"{currency}{lowest_price_val:.2f}")
-
-                # Volume chart (if available) - avoid ambiguous boolean checks
-                if "Volume" in data.columns:
-                    vol_ser = _get_column_as_series(data, "Volume")
-                    vol_sum = float(vol_ser.fillna(0).sum())
-                    if vol_sum > 0:
-                        st.subheader("📊 Trading Volume")
-                        vol_plot = pd.DataFrame({"Volume": vol_ser.values}, index=data["Date"])
-                        st.bar_chart(vol_plot["Volume"], use_container_width=True)
-
-    except Exception as e:
-        st.error(f"⚠️ Error fetching data: {e}")
+st.markdown("---")
+st.markdown("Built with ❤️ using Streamlit, XGBoost, and TensorFlow")
 
