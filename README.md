@@ -69,7 +69,7 @@ This project allows you to:
  ┗ 📂 models/                        # Saved models (created after training)
    ┣ 📜 xgb_model.json               # Trained XGBoost model
    ┣ 📜 xgb_scaler.pkl               # Feature scaler for XGBoost
-   ┣ 📜 lstm.h5                      # Trained LSTM model
+   ┣ 📜 lstm.keras                   # Trained LSTM model
    ┗ 📜 lstm_scaler.pkl              # Scaler for LSTM
 ```
 

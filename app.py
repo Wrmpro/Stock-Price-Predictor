@@ -126,7 +126,65 @@ if st.button("Predict Next Days"):
                     pred_df['Error %'] = (pred_df['Error'] / pred_df['Actual'] * 100).round(2)
                     st.dataframe(pred_df, use_container_width=True)
         else:
-            st.info("🔄 LSTM support: Please train a model first by running:\n```bash\npython src/main.py\n```\nThen place models/lstm.h5 and models/lstm_scaler.pkl in the repo.")
+            # LSTM model
+            # Check for both .keras and .h5 formats (backward compatibility)
+            lstm_model_path = None
+            if os.path.exists('models/lstm.keras'):
+                lstm_model_path = 'models/lstm.keras'
+            elif os.path.exists('models/lstm.h5'):
+                lstm_model_path = 'models/lstm.h5'
+            
+            if not lstm_model_path or not os.path.exists('models/lstm_scaler.pkl'):
+                st.error("❌ LSTM model not found. Train it using: `python src/main.py`")
+                st.info("💡 Run the following command in your terminal:\n```bash\npython src/main.py\n```\nThis will create both XGBoost and LSTM models.")
+            else:
+                with st.spinner("Loading LSTM model and generating predictions..."):
+                    from tensorflow import keras
+                    from sklearn.preprocessing import MinMaxScaler
+                    
+                    # Load model and scaler
+                    model = keras.models.load_model(lstm_model_path)
+                    scaler_lstm = joblib.load('models/lstm_scaler.pkl')
+                    
+                    # Prepare sequences
+                    series = df['Close'].values
+                    series_s = scaler_lstm.transform(series.reshape(-1,1)).flatten()
+                    seq_len = 30
+                    X_seq, _ = create_sequences(series_s, seq_len=seq_len)
+                    X_seq = X_seq.reshape(X_seq.shape[0], X_seq.shape[1], 1)
+                    
+                    # Predict
+                    preds_s = model.predict(X_seq, verbose=0).flatten()
+                    preds = scaler_lstm.inverse_transform(preds_s.reshape(-1,1)).flatten()
+                    
+                    # Align predictions with dates (predictions start at index seq_len)
+                    pred_dates = df.index[seq_len:seq_len+len(preds)]
+                    
+                    # Show predictions
+                    last_n = min(200, len(preds))
+                    fig = go.Figure()
+                    fig.add_trace(go.Scatter(x=pred_dates[-last_n:], 
+                                            y=df['Close'].loc[pred_dates][-last_n:], 
+                                            name='Actual', mode='lines'))
+                    fig.add_trace(go.Scatter(x=pred_dates[-last_n:], 
+                                            y=preds[-last_n:], 
+                                            name='Predicted', mode='lines'))
+                    fig.update_layout(title=f"{st.session_state.symbol} - LSTM Actual vs Predicted Prices",
+                                     xaxis_title="Date", 
+                                     yaxis_title="Price",
+                                     height=500)
+                    st.plotly_chart(fig, use_container_width=True)
+                    
+                    # Show recent predictions
+                    st.write("📋 Recent Predictions:")
+                    pred_df = pd.DataFrame({
+                        'Date': pred_dates[-10:],
+                        'Actual': df['Close'].loc[pred_dates][-10:].values,
+                        'Predicted': preds[-10:]
+                    })
+                    pred_df['Error'] = abs(pred_df['Actual'] - pred_df['Predicted'])
+                    pred_df['Error %'] = (pred_df['Error'] / pred_df['Actual'] * 100).round(2)
+                    st.dataframe(pred_df, use_container_width=True)
 
 st.markdown("---")
 st.markdown("""
