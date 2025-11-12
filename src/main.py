@@ -11,6 +11,9 @@ import os
 
 def load_data(symbol, start='2015-01-01', end=None):
     df = yf.download(symbol, start=start, end=end, progress=False)
+    # Flatten MultiIndex columns if present
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = df.columns.get_level_values(0)
     df = df[['Open','High','Low','Close','Volume']]
     return df
 
@@ -47,7 +50,7 @@ def train_pipeline_xgb(symbol='AAPL', save_path='models/xgb_model.json'):
     joblib.dump(scaler, 'models/xgb_scaler.pkl')
     return metrics
 
-def train_pipeline_lstm(symbol='AAPL', seq_len=30, save_path='models/lstm.h5'):
+def train_pipeline_lstm(symbol='AAPL', seq_len=30, save_path='models/lstm.keras'):
     df = load_data(symbol)
     series = df['Close'].values
     # scale series
@@ -56,12 +59,23 @@ def train_pipeline_lstm(symbol='AAPL', seq_len=30, save_path='models/lstm.h5'):
     series_s = scaler.fit_transform(series.reshape(-1,1)).flatten()
     model, hist = train_lstm(series_s, seq_len=seq_len, epochs=80)
     # save
+    os.makedirs('models', exist_ok=True)
     model.save(save_path)
     joblib.dump(scaler, 'models/lstm_scaler.pkl')
     return model, hist
 
 if __name__ == '__main__':
-    # example training
+    # Train both models
     print("Training XGBoost on AAPL...")
     train_pipeline_xgb('AAPL')
+    
+    print("\nTraining LSTM on AAPL...")
+    train_pipeline_lstm('AAPL')
+    
+    print("\n✅ All models trained successfully!")
+    print("Models saved to:")
+    print("  - models/xgb_model.json")
+    print("  - models/xgb_scaler.pkl")
+    print("  - models/lstm.keras")
+    print("  - models/lstm_scaler.pkl")
 

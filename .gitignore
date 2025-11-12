@@ -41,6 +41,7 @@ venv.bak/
 models/
 *.pkl
 *.h5
+*.keras
 *.json
 
 # OS
