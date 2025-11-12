@@ -4,3 +4,9 @@ pandas
 scikit-learn
 matplotlib
 yfinance
+xgboost
+tensorflow>=2.12
+joblib
+plotly
+streamlit
+ta

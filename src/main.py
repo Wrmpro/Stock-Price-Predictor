@@ -1,32 +1,67 @@
-
+# src/main.py
 import yfinance as yf
-import matplotlib.pyplot as plt
 import pandas as pd
-from spp.model import train_model, predict_prices
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from src.spp.feature_engineering import add_basic_features
+from src.spp.model import train_xgboost, xgb_predict, train_lstm, create_sequences, evaluate_regression
+import joblib
+import os
 
-def main():
-    ticker = "AAPL"
-    print(f"Downloading stock data for {ticker}...")
-    data = yf.download(ticker, period="6mo", interval="1d")
+def load_data(symbol, start='2015-01-01', end=None):
+    df = yf.download(symbol, start=start, end=end, progress=False)
+    df = df[['Open','High','Low','Close','Volume']]
+    return df
 
-    if data.empty:
-        print("No data found. Check ticker symbol.")
-        return
+def prepare_tabular(df):
+    df_feat = add_basic_features(df, close_col='Close')
+    X = df_feat.drop(columns=['Open','High','Low','Close','Volume'], errors='ignore')
+    y = df_feat['Close'].shift(-1).loc[X.index]   # predict next day's close
+    # align
+    mask = y.notna()
+    X = X.loc[mask]
+    y = y.loc[mask]
+    return X, y
 
-    print("Training model...")
-    model, X_test, y_test = train_model(data)
+def train_pipeline_xgb(symbol='AAPL', save_path='models/xgb_model.json'):
+    df = load_data(symbol)
+    X, y = prepare_tabular(df)
+    # time-based train-test split: last 20% as test
+    split = int(len(X)*0.8)
+    X_train, X_test = X.iloc[:split], X.iloc[split:]
+    y_train, y_test = y.iloc[:split], y.iloc[split:]
+    # scaler
+    scaler = StandardScaler()
+    X_train_s = scaler.fit_transform(X_train)
+    X_test_s = scaler.transform(X_test)
+    # train
+    bst = train_xgboost(X_train_s, y_train.values, X_val=X_test_s, y_val=y_test.values, num_boost_round=1000)
+    # evaluate
+    preds = xgb_predict(bst, X_test_s)
+    metrics = evaluate_regression(y_test.values, preds)
+    print("XGBoost metrics:", metrics)
+    # save
+    os.makedirs('models', exist_ok=True)
+    bst.save_model(save_path)
+    joblib.dump(scaler, 'models/xgb_scaler.pkl')
+    return metrics
 
-    print("Predicting future prices...")
-    predictions = predict_prices(model, X_test)
+def train_pipeline_lstm(symbol='AAPL', seq_len=30, save_path='models/lstm.h5'):
+    df = load_data(symbol)
+    series = df['Close'].values
+    # scale series
+    from sklearn.preprocessing import MinMaxScaler
+    scaler = MinMaxScaler()
+    series_s = scaler.fit_transform(series.reshape(-1,1)).flatten()
+    model, hist = train_lstm(series_s, seq_len=seq_len, epochs=80)
+    # save
+    model.save(save_path)
+    joblib.dump(scaler, 'models/lstm_scaler.pkl')
+    return model, hist
 
-    # Plot results
-    plt.figure(figsize=(10, 6))
-    plt.plot(y_test.values, label="Actual")
-    plt.plot(predictions, label="Predicted")
-    plt.legend()
-    plt.title(f"Stock Price Prediction for {ticker}")
-    plt.show()
-
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    # example training
+    print("Training XGBoost on AAPL...")
+    train_pipeline_xgb('AAPL')
 
