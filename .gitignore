@@ -58,3 +58,8 @@ Thumbs.db
 /tmp/
 *.tmp
 *.log
+
+# Test files
+test_data_generator.py
+train_test_model.py
+app_test.py

@@ -14,10 +14,18 @@ import os
 st.set_page_config(page_title="Stock Price Predictor", page_icon="📈", layout="wide")
 st.title("📈 Stock Price Predictor & Visualizer")
 
+# Initialize session state
+if 'symbol' not in st.session_state:
+    st.session_state.symbol = "AAPL"
+
 # Sidebar
 st.sidebar.header("Configuration")
 
-symbol = st.sidebar.text_input("Ticker (e.g., AAPL or RELIANCE.NS)", value="AAPL")
+# Use session state directly for the text input
+symbol_input = st.sidebar.text_input("Ticker (e.g., AAPL or RELIANCE.NS)", value=st.session_state.symbol)
+# Update session state when sidebar input changes
+if symbol_input:
+    st.session_state.symbol = symbol_input
 start = st.sidebar.date_input("Start date", value=datetime(2018,1,1))
 end = st.sidebar.date_input("End date", value=datetime.today())
 
@@ -35,24 +43,28 @@ st.markdown("### ✅ Quick Stock Selection")
 col1, col2, col3, col4 = st.columns(4)
 with col1:
     if st.button("AAPL"):
-        symbol = "AAPL"
+        st.session_state.symbol = "AAPL"
+        st.rerun()
 with col2:
     if st.button("TSLA"):
-        symbol = "TSLA"
+        st.session_state.symbol = "TSLA"
+        st.rerun()
 with col3:
     if st.button("MSFT"):
-        symbol = "MSFT"
+        st.session_state.symbol = "MSFT"
+        st.rerun()
 with col4:
     if st.button("RELIANCE.NS"):
-        symbol = "RELIANCE.NS"
+        st.session_state.symbol = "RELIANCE.NS"
+        st.rerun()
 
 # Data loading
 if st.button("Load Data"):
-    df = yf.download(symbol, start=start, end=end, progress=False)
+    df = yf.download(st.session_state.symbol, start=start, end=end, progress=False)
     if df.empty:
         st.error("No data found for symbol.")
     else:
-        st.success(f"Loaded {len(df)} rows.")
+        st.success(f"Loaded {len(df)} rows for {st.session_state.symbol}.")
         st.dataframe(df.tail(), use_container_width=True)
         
         # Basic visualization
@@ -69,7 +81,7 @@ st.subheader("🤖 ML Prediction")
 model_choice = st.selectbox("Select Model", ["XGBoost (tabular)", "LSTM (sequence)"])
 
 if st.button("Predict Next Days"):
-    df = yf.download(symbol, start=start, end=end, progress=False)
+    df = yf.download(st.session_state.symbol, start=start, end=end, progress=False)
     if df.empty:
         st.error("No data found.")
     else:
@@ -97,7 +109,7 @@ if st.button("Predict Next Days"):
                     fig.add_trace(go.Scatter(x=df_feat.index[-last_n:], 
                                             y=preds[-last_n:], 
                                             name='Predicted', mode='lines'))
-                    fig.update_layout(title=f"{symbol} - Actual vs Predicted Prices",
+                    fig.update_layout(title=f"{st.session_state.symbol} - Actual vs Predicted Prices",
                                      xaxis_title="Date", 
                                      yaxis_title="Price",
                                      height=500)
