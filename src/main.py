@@ -52,7 +52,7 @@ def train_pipeline_xgb(symbol='AAPL', save_path='models/xgb_model.json'):
 
 def train_pipeline_lstm(symbol='AAPL', seq_len=30, save_path='models/lstm.keras'):
     df = load_data(symbol)
-    series = df['Close'].values
+    series = df['Close'].values.flatten()
     # scale series
     from sklearn.preprocessing import MinMaxScaler
     scaler = MinMaxScaler()
