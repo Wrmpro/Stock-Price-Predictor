@@ -119,7 +119,7 @@ if st.button("Predict Next Days"):
                     st.write("📋 Recent Predictions:")
                     pred_df = pd.DataFrame({
                         'Date': df_feat.index[-10:],
-                        'Actual': df['Close'].loc[df_feat.index][-10:].values,
+                        'Actual': df['Close'].loc[df_feat.index][-10:].values.flatten(),
                         'Predicted': preds[-10:]
                     })
                     pred_df['Error'] = abs(pred_df['Actual'] - pred_df['Predicted'])
@@ -147,7 +147,7 @@ if st.button("Predict Next Days"):
                     scaler_lstm = joblib.load('models/lstm_scaler.pkl')
                     
                     # Prepare sequences
-                    series = df['Close'].values
+                    series = df['Close'].values.flatten()
                     series_s = scaler_lstm.transform(series.reshape(-1,1)).flatten()
                     seq_len = 30
                     X_seq, _ = create_sequences(series_s, seq_len=seq_len)
@@ -179,7 +179,7 @@ if st.button("Predict Next Days"):
                     st.write("📋 Recent Predictions:")
                     pred_df = pd.DataFrame({
                         'Date': pred_dates[-10:],
-                        'Actual': df['Close'].loc[pred_dates][-10:].values,
+                        'Actual': df['Close'].loc[pred_dates][-10:].values.flatten(),
                         'Predicted': preds[-10:]
                     })
                     pred_df['Error'] = abs(pred_df['Actual'] - pred_df['Predicted'])
