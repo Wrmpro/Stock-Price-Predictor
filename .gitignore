@@ -37,12 +37,14 @@ venv.bak/
 *.swo
 *~
 
-# Models
-models/
-*.pkl
-*.h5
-*.keras
-*.json
+# Models (commented out to allow committing trained models)
+# models/
+# *.pkl
+# *.h5
+# *.keras
+# Note: We keep *.json commented as package.json and other configs might be needed
+# Only ignore model JSON files if needed
+# *.json
 
 # OS
 .DS_Store
@@ -64,3 +66,4 @@ Thumbs.db
 test_data_generator.py
 train_test_model.py
 app_test.py
+train_with_sample_data.py
